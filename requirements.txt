@@ -87,6 +87,7 @@ pydantic_core             2.18.1
 Pygments                  2.17.2
 PySocks                   1.7.1
 python-dateutil           2.9.0.post0
+python-dotenv             1.0.1
 python-json-logger        2.0.7
 pyvis                     0.3.2
 PyYAML                    6.0.1
@@ -128,6 +129,7 @@ wasabi                    1.1.2
 wcwidth                   0.2.13
 weasel                    0.3.4
 webcolors                 1.13
+webdriver-manager         4.0.1
 webencodings              0.5.1
 websocket-client          1.7.0
 wheel                     0.43.0
