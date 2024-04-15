@@ -69,7 +69,7 @@ Teslyn Baradon
 Narenwin Barda
 Duhara Basaheen
 Davram Bashere
-Zarine (Faile) Bashere
+Zarine Bashere
 Adelorna Bastine
 Sheriam Bayanar
 Myrelle Berengari
@@ -103,7 +103,7 @@ Nisao Dachen
 Mistress Daelvin
 Masema Dagar
 Caraline Damodred
-Galadedrid "Galad" Damodred
+Galadedrid Damodred
 Raolin Darksbane
 Corlan Dashiva
 Cetalia Delarme
@@ -239,7 +239,7 @@ Birgitte Silverbow
 Betse Silvin
 Slayer
 Masuri Sokawa
-Someshta, the Green Man
+Someshta
 Carlinya Sorevin
 Sorilea
 Fera Sormen
