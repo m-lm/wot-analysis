@@ -1,0 +1,357 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script>function neighbourhoodHighlight(params) {
+  // console.log("in nieghbourhoodhighlight");
+  allNodes = nodes.get({ returnType: "Object" });
+  // originalNodes = JSON.parse(JSON.stringify(allNodes));
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    highlightActive = true;
+    var i, j;
+    var selectedNode = params.nodes[0];
+    var degrees = 2;
+
+    // mark all nodes as hard to read.
+    for (let nodeId in allNodes) {
+      // nodeColors[nodeId] = allNodes[nodeId].color;
+      allNodes[nodeId].color = "rgba(200,200,200,0.5)";
+      if (allNodes[nodeId].hiddenLabel === undefined) {
+        allNodes[nodeId].hiddenLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+    var connectedNodes = network.getConnectedNodes(selectedNode);
+    var allConnectedNodes = [];
+
+    // get the second degree nodes
+    for (i = 1; i < degrees; i++) {
+      for (j = 0; j < connectedNodes.length; j++) {
+        allConnectedNodes = allConnectedNodes.concat(
+          network.getConnectedNodes(connectedNodes[j])
+        );
+      }
+    }
+
+    // all second degree nodes get a different color and their label back
+    for (i = 0; i < allConnectedNodes.length; i++) {
+      // allNodes[allConnectedNodes[i]].color = "pink";
+      allNodes[allConnectedNodes[i]].color = "rgba(150,150,150,0.75)";
+      if (allNodes[allConnectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[allConnectedNodes[i]].label =
+          allNodes[allConnectedNodes[i]].hiddenLabel;
+        allNodes[allConnectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // all first degree nodes get their own color and their label back
+    for (i = 0; i < connectedNodes.length; i++) {
+      // allNodes[connectedNodes[i]].color = undefined;
+      allNodes[connectedNodes[i]].color = nodeColors[connectedNodes[i]];
+      if (allNodes[connectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[connectedNodes[i]].label =
+          allNodes[connectedNodes[i]].hiddenLabel;
+        allNodes[connectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // the main node gets its own color and its label back.
+    // allNodes[selectedNode].color = undefined;
+    allNodes[selectedNode].color = nodeColors[selectedNode];
+    if (allNodes[selectedNode].hiddenLabel !== undefined) {
+      allNodes[selectedNode].label = allNodes[selectedNode].hiddenLabel;
+      allNodes[selectedNode].hiddenLabel = undefined;
+    }
+  } else if (highlightActive === true) {
+    // console.log("highlightActive was true");
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      // allNodes[nodeId].color = "purple";
+      allNodes[nodeId].color = nodeColors[nodeId];
+      // delete allNodes[nodeId].color;
+      if (allNodes[nodeId].hiddenLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].hiddenLabel;
+        allNodes[nodeId].hiddenLabel = undefined;
+      }
+    }
+    highlightActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    // console.log("Nothing was selected");
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        // allNodes[nodeId].color = {};
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function filterHighlight(params) {
+  allNodes = nodes.get({ returnType: "Object" });
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    filterActive = true;
+    let selectedNodes = params.nodes;
+
+    // hiding all nodes and saving the label
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = true;
+      if (allNodes[nodeId].savedLabel === undefined) {
+        allNodes[nodeId].savedLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+
+    for (let i=0; i < selectedNodes.length; i++) {
+      allNodes[selectedNodes[i]].hidden = false;
+      if (allNodes[selectedNodes[i]].savedLabel !== undefined) {
+        allNodes[selectedNodes[i]].label = allNodes[selectedNodes[i]].savedLabel;
+        allNodes[selectedNodes[i]].savedLabel = undefined;
+      }
+    }
+
+  } else if (filterActive === true) {
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = false;
+      if (allNodes[nodeId].savedLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].savedLabel;
+        allNodes[nodeId].savedLabel = undefined;
+      }
+    }
+    filterActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function selectNode(nodes) {
+  network.selectNodes(nodes);
+  neighbourhoodHighlight({ nodes: nodes });
+  return nodes;
+}
+
+function selectNodes(nodes) {
+  network.selectNodes(nodes);
+  filterHighlight({nodes: nodes});
+  return nodes;
+}
+
+function highlightFilter(filter) {
+  let selectedNodes = []
+  let selectedProp = filter['property']
+  if (filter['item'] === 'node') {
+    let allNodes = nodes.get({ returnType: "Object" });
+    for (let nodeId in allNodes) {
+      if (allNodes[nodeId][selectedProp] && filter['value'].includes((allNodes[nodeId][selectedProp]).toString())) {
+        selectedNodes.push(nodeId)
+      }
+    }
+  }
+  else if (filter['item'] === 'edge'){
+    let allEdges = edges.get({returnType: 'object'});
+    // check if the selected property exists for selected edge and select the nodes connected to the edge
+    for (let edge in allEdges) {
+      if (allEdges[edge][selectedProp] && filter['value'].includes((allEdges[edge][selectedProp]).toString())) {
+        selectedNodes.push(allEdges[edge]['from'])
+        selectedNodes.push(allEdges[edge]['to'])
+      }
+    }
+  }
+  selectNodes(selectedNodes)
+}</script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+            
+            
+            
+            
+            
+
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 800px;
+                 height: 800px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#97c2fc", "id": "Lews", "label": "Lews", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Ilyena", "label": "Ilyena", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "High", "label": "High", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Dark", "label": "Dark", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "One", "label": "One", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Rand", "label": "Rand", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "al\u0027Thor", "label": "al\u0027Thor", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Tam", "label": "Tam", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Mat", "label": "Mat", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Cauthon", "label": "Cauthon", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Perrin", "label": "Perrin", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Aybara", "label": "Aybara", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Egwene", "label": "Egwene", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "al\u0027Vere", "label": "al\u0027Vere", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Nynaeve", "label": "Nynaeve", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "al\u0027Meara", "label": "al\u0027Meara", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Mistress", "label": "Mistress", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Ishamael", "label": "Ishamael", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Aginor", "label": "Aginor", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Haral", "label": "Haral", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Luhhan", "label": "Luhhan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Moiraine", "label": "Moiraine", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Lan", "label": "Lan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Padan", "label": "Padan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Fain", "label": "Fain", "shape": "dot", "size": 10}]);
+                  edges = new vis.DataSet([{"from": "Lews", "to": "Ilyena", "width": 1}, {"from": "Lews", "to": "High", "width": 1}, {"from": "Lews", "to": "Dark", "width": 1}, {"from": "Lews", "to": "One", "width": 1}, {"from": "Lews", "to": "Rand", "width": 1}, {"from": "Lews", "to": "al\u0027Thor", "width": 1}, {"from": "Lews", "to": "Tam", "width": 1}, {"from": "Lews", "to": "Mat", "width": 1}, {"from": "Lews", "to": "Cauthon", "width": 1}, {"from": "Lews", "to": "Perrin", "width": 1}, {"from": "Lews", "to": "Aybara", "width": 1}, {"from": "Lews", "to": "Egwene", "width": 1}, {"from": "Lews", "to": "al\u0027Vere", "width": 1}, {"from": "Lews", "to": "Nynaeve", "width": 1}, {"from": "Lews", "to": "al\u0027Meara", "width": 1}, {"from": "Lews", "to": "Mistress", "width": 1}, {"from": "Lews", "to": "Ishamael", "width": 1}, {"from": "Lews", "to": "Aginor", "width": 1}, {"from": "Lews", "to": "Haral", "width": 1}, {"from": "Lews", "to": "Luhhan", "width": 1}, {"from": "Lews", "to": "Moiraine", "width": 1}, {"from": "Lews", "to": "Lan", "width": 1}, {"from": "Lews", "to": "Padan", "width": 1}, {"from": "Lews", "to": "Fain", "width": 1}, {"from": "Ilyena", "to": "High", "width": 1}, {"from": "Ilyena", "to": "Dark", "width": 1}, {"from": "Ilyena", "to": "One", "width": 1}, {"from": "Ilyena", "to": "Rand", "width": 1}, {"from": "Ilyena", "to": "al\u0027Thor", "width": 1}, {"from": "Ilyena", "to": "Tam", "width": 1}, {"from": "Ilyena", "to": "Mat", "width": 1}, {"from": "Ilyena", "to": "Cauthon", "width": 1}, {"from": "Ilyena", "to": "Perrin", "width": 1}, {"from": "Ilyena", "to": "Aybara", "width": 1}, {"from": "Ilyena", "to": "Egwene", "width": 1}, {"from": "Ilyena", "to": "al\u0027Vere", "width": 1}, {"from": "Ilyena", "to": "Nynaeve", "width": 1}, {"from": "Ilyena", "to": "al\u0027Meara", "width": 1}, {"from": "Ilyena", "to": "Mistress", "width": 1}, {"from": "Ilyena", "to": "Ishamael", "width": 1}, {"from": "Ilyena", "to": "Aginor", "width": 1}, {"from": "Ilyena", "to": "Haral", "width": 1}, {"from": "Ilyena", "to": "Luhhan", "width": 1}, {"from": "Ilyena", "to": "Moiraine", "width": 1}, {"from": "Ilyena", "to": "Lan", "width": 1}, {"from": "Ilyena", "to": "Padan", "width": 1}, {"from": "Ilyena", "to": "Fain", "width": 1}, {"from": "High", "to": "Dark", "width": 1}, {"from": "High", "to": "One", "width": 1}, {"from": "High", "to": "Rand", "width": 1}, {"from": "High", "to": "al\u0027Thor", "width": 1}, {"from": "High", "to": "Tam", "width": 1}, {"from": "High", "to": "Mat", "width": 1}, {"from": "High", "to": "Cauthon", "width": 1}, {"from": "High", "to": "Perrin", "width": 1}, {"from": "High", "to": "Aybara", "width": 1}, {"from": "High", "to": "Egwene", "width": 1}, {"from": "High", "to": "al\u0027Vere", "width": 1}, {"from": "High", "to": "Nynaeve", "width": 1}, {"from": "High", "to": "al\u0027Meara", "width": 1}, {"from": "High", "to": "Mistress", "width": 1}, {"from": "High", "to": "Ishamael", "width": 1}, {"from": "High", "to": "Aginor", "width": 1}, {"from": "High", "to": "Haral", "width": 1}, {"from": "High", "to": "Luhhan", "width": 1}, {"from": "High", "to": "Moiraine", "width": 1}, {"from": "High", "to": "Lan", "width": 1}, {"from": "High", "to": "Padan", "width": 1}, {"from": "High", "to": "Fain", "width": 1}, {"from": "Dark", "to": "One", "width": 1}, {"from": "Dark", "to": "Rand", "width": 1}, {"from": "Dark", "to": "al\u0027Thor", "width": 1}, {"from": "Dark", "to": "Tam", "width": 1}, {"from": "Dark", "to": "Mat", "width": 1}, {"from": "Dark", "to": "Cauthon", "width": 1}, {"from": "Dark", "to": "Perrin", "width": 1}, {"from": "Dark", "to": "Aybara", "width": 1}, {"from": "Dark", "to": "Egwene", "width": 1}, {"from": "Dark", "to": "al\u0027Vere", "width": 1}, {"from": "Dark", "to": "Nynaeve", "width": 1}, {"from": "Dark", "to": "al\u0027Meara", "width": 1}, {"from": "Dark", "to": "Mistress", "width": 1}, {"from": "Dark", "to": "Ishamael", "width": 1}, {"from": "Dark", "to": "Aginor", "width": 1}, {"from": "Dark", "to": "Haral", "width": 1}, {"from": "Dark", "to": "Luhhan", "width": 1}, {"from": "Dark", "to": "Moiraine", "width": 1}, {"from": "Dark", "to": "Lan", "width": 1}, {"from": "Dark", "to": "Padan", "width": 1}, {"from": "Dark", "to": "Fain", "width": 1}, {"from": "One", "to": "Rand", "width": 1}, {"from": "One", "to": "al\u0027Thor", "width": 1}, {"from": "One", "to": "Tam", "width": 1}, {"from": "One", "to": "Mat", "width": 1}, {"from": "One", "to": "Cauthon", "width": 1}, {"from": "One", "to": "Perrin", "width": 1}, {"from": "One", "to": "Aybara", "width": 1}, {"from": "One", "to": "Egwene", "width": 1}, {"from": "One", "to": "al\u0027Vere", "width": 1}, {"from": "One", "to": "Nynaeve", "width": 1}, {"from": "One", "to": "al\u0027Meara", "width": 1}, {"from": "One", "to": "Mistress", "width": 1}, {"from": "One", "to": "Ishamael", "width": 1}, {"from": "One", "to": "Aginor", "width": 1}, {"from": "One", "to": "Haral", "width": 1}, {"from": "One", "to": "Luhhan", "width": 1}, {"from": "One", "to": "Moiraine", "width": 1}, {"from": "One", "to": "Lan", "width": 1}, {"from": "One", "to": "Padan", "width": 1}, {"from": "One", "to": "Fain", "width": 1}, {"from": "Rand", "to": "al\u0027Thor", "width": 1}, {"from": "Rand", "to": "Tam", "width": 1}, {"from": "Rand", "to": "Mat", "width": 1}, {"from": "Rand", "to": "Cauthon", "width": 1}, {"from": "Rand", "to": "Perrin", "width": 1}, {"from": "Rand", "to": "Aybara", "width": 1}, {"from": "Rand", "to": "Egwene", "width": 1}, {"from": "Rand", "to": "al\u0027Vere", "width": 1}, {"from": "Rand", "to": "Nynaeve", "width": 1}, {"from": "Rand", "to": "al\u0027Meara", "width": 1}, {"from": "Rand", "to": "Mistress", "width": 1}, {"from": "Rand", "to": "Ishamael", "width": 1}, {"from": "Rand", "to": "Aginor", "width": 1}, {"from": "Rand", "to": "Haral", "width": 1}, {"from": "Rand", "to": "Luhhan", "width": 1}, {"from": "Rand", "to": "Moiraine", "width": 1}, {"from": "Rand", "to": "Lan", "width": 1}, {"from": "Rand", "to": "Padan", "width": 1}, {"from": "Rand", "to": "Fain", "width": 1}, {"from": "al\u0027Thor", "to": "Tam", "width": 1}, {"from": "al\u0027Thor", "to": "Mat", "width": 1}, {"from": "al\u0027Thor", "to": "Cauthon", "width": 1}, {"from": "al\u0027Thor", "to": "Perrin", "width": 1}, {"from": "al\u0027Thor", "to": "Aybara", "width": 1}, {"from": "al\u0027Thor", "to": "Egwene", "width": 1}, {"from": "al\u0027Thor", "to": "al\u0027Vere", "width": 1}, {"from": "al\u0027Thor", "to": "Nynaeve", "width": 1}, {"from": "al\u0027Thor", "to": "al\u0027Meara", "width": 1}, {"from": "al\u0027Thor", "to": "Mistress", "width": 1}, {"from": "al\u0027Thor", "to": "Ishamael", "width": 1}, {"from": "al\u0027Thor", "to": "Aginor", "width": 1}, {"from": "al\u0027Thor", "to": "Haral", "width": 1}, {"from": "al\u0027Thor", "to": "Luhhan", "width": 1}, {"from": "al\u0027Thor", "to": "Moiraine", "width": 1}, {"from": "al\u0027Thor", "to": "Lan", "width": 1}, {"from": "al\u0027Thor", "to": "Padan", "width": 1}, {"from": "al\u0027Thor", "to": "Fain", "width": 1}, {"from": "Tam", "to": "Mat", "width": 1}, {"from": "Tam", "to": "Cauthon", "width": 1}, {"from": "Tam", "to": "Perrin", "width": 1}, {"from": "Tam", "to": "Aybara", "width": 1}, {"from": "Tam", "to": "Egwene", "width": 1}, {"from": "Tam", "to": "al\u0027Vere", "width": 1}, {"from": "Tam", "to": "Nynaeve", "width": 1}, {"from": "Tam", "to": "al\u0027Meara", "width": 1}, {"from": "Tam", "to": "Mistress", "width": 1}, {"from": "Tam", "to": "Ishamael", "width": 1}, {"from": "Tam", "to": "Aginor", "width": 1}, {"from": "Tam", "to": "Haral", "width": 1}, {"from": "Tam", "to": "Luhhan", "width": 1}, {"from": "Tam", "to": "Moiraine", "width": 1}, {"from": "Tam", "to": "Lan", "width": 1}, {"from": "Tam", "to": "Padan", "width": 1}, {"from": "Tam", "to": "Fain", "width": 1}, {"from": "Mat", "to": "Cauthon", "width": 1}, {"from": "Mat", "to": "Perrin", "width": 1}, {"from": "Mat", "to": "Aybara", "width": 1}, {"from": "Mat", "to": "Egwene", "width": 1}, {"from": "Mat", "to": "al\u0027Vere", "width": 1}, {"from": "Mat", "to": "Nynaeve", "width": 1}, {"from": "Mat", "to": "al\u0027Meara", "width": 1}, {"from": "Mat", "to": "Mistress", "width": 1}, {"from": "Mat", "to": "Ishamael", "width": 1}, {"from": "Mat", "to": "Aginor", "width": 1}, {"from": "Mat", "to": "Haral", "width": 1}, {"from": "Mat", "to": "Luhhan", "width": 1}, {"from": "Mat", "to": "Moiraine", "width": 1}, {"from": "Mat", "to": "Lan", "width": 1}, {"from": "Mat", "to": "Padan", "width": 1}, {"from": "Mat", "to": "Fain", "width": 1}, {"from": "Cauthon", "to": "Perrin", "width": 1}, {"from": "Cauthon", "to": "Aybara", "width": 1}, {"from": "Cauthon", "to": "Egwene", "width": 1}, {"from": "Cauthon", "to": "al\u0027Vere", "width": 1}, {"from": "Cauthon", "to": "Nynaeve", "width": 1}, {"from": "Cauthon", "to": "al\u0027Meara", "width": 1}, {"from": "Cauthon", "to": "Mistress", "width": 1}, {"from": "Cauthon", "to": "Ishamael", "width": 1}, {"from": "Cauthon", "to": "Aginor", "width": 1}, {"from": "Cauthon", "to": "Haral", "width": 1}, {"from": "Cauthon", "to": "Luhhan", "width": 1}, {"from": "Cauthon", "to": "Moiraine", "width": 1}, {"from": "Cauthon", "to": "Lan", "width": 1}, {"from": "Cauthon", "to": "Padan", "width": 1}, {"from": "Cauthon", "to": "Fain", "width": 1}, {"from": "Perrin", "to": "Aybara", "width": 1}, {"from": "Perrin", "to": "Egwene", "width": 1}, {"from": "Perrin", "to": "al\u0027Vere", "width": 1}, {"from": "Perrin", "to": "Nynaeve", "width": 1}, {"from": "Perrin", "to": "al\u0027Meara", "width": 1}, {"from": "Perrin", "to": "Mistress", "width": 1}, {"from": "Perrin", "to": "Ishamael", "width": 1}, {"from": "Perrin", "to": "Aginor", "width": 1}, {"from": "Perrin", "to": "Haral", "width": 1}, {"from": "Perrin", "to": "Luhhan", "width": 1}, {"from": "Perrin", "to": "Moiraine", "width": 1}, {"from": "Perrin", "to": "Lan", "width": 1}, {"from": "Perrin", "to": "Padan", "width": 1}, {"from": "Perrin", "to": "Fain", "width": 1}, {"from": "Aybara", "to": "Egwene", "width": 1}, {"from": "Aybara", "to": "al\u0027Vere", "width": 1}, {"from": "Aybara", "to": "Nynaeve", "width": 1}, {"from": "Aybara", "to": "al\u0027Meara", "width": 1}, {"from": "Aybara", "to": "Mistress", "width": 1}, {"from": "Aybara", "to": "Ishamael", "width": 1}, {"from": "Aybara", "to": "Aginor", "width": 1}, {"from": "Aybara", "to": "Haral", "width": 1}, {"from": "Aybara", "to": "Luhhan", "width": 1}, {"from": "Aybara", "to": "Moiraine", "width": 1}, {"from": "Aybara", "to": "Lan", "width": 1}, {"from": "Aybara", "to": "Padan", "width": 1}, {"from": "Aybara", "to": "Fain", "width": 1}, {"from": "Egwene", "to": "al\u0027Vere", "width": 1}, {"from": "Egwene", "to": "Nynaeve", "width": 1}, {"from": "Egwene", "to": "al\u0027Meara", "width": 1}, {"from": "Egwene", "to": "Mistress", "width": 1}, {"from": "Egwene", "to": "Ishamael", "width": 1}, {"from": "Egwene", "to": "Aginor", "width": 1}, {"from": "Egwene", "to": "Haral", "width": 1}, {"from": "Egwene", "to": "Luhhan", "width": 1}, {"from": "Egwene", "to": "Moiraine", "width": 1}, {"from": "Egwene", "to": "Lan", "width": 1}, {"from": "Egwene", "to": "Padan", "width": 1}, {"from": "Egwene", "to": "Fain", "width": 1}, {"from": "al\u0027Vere", "to": "Nynaeve", "width": 1}, {"from": "al\u0027Vere", "to": "al\u0027Meara", "width": 1}, {"from": "al\u0027Vere", "to": "Mistress", "width": 1}, {"from": "al\u0027Vere", "to": "Ishamael", "width": 1}, {"from": "al\u0027Vere", "to": "Aginor", "width": 1}, {"from": "al\u0027Vere", "to": "Haral", "width": 1}, {"from": "al\u0027Vere", "to": "Luhhan", "width": 1}, {"from": "al\u0027Vere", "to": "Moiraine", "width": 1}, {"from": "al\u0027Vere", "to": "Lan", "width": 1}, {"from": "al\u0027Vere", "to": "Padan", "width": 1}, {"from": "al\u0027Vere", "to": "Fain", "width": 1}, {"from": "Nynaeve", "to": "al\u0027Meara", "width": 1}, {"from": "Nynaeve", "to": "Mistress", "width": 1}, {"from": "Nynaeve", "to": "Ishamael", "width": 1}, {"from": "Nynaeve", "to": "Aginor", "width": 1}, {"from": "Nynaeve", "to": "Haral", "width": 1}, {"from": "Nynaeve", "to": "Luhhan", "width": 1}, {"from": "Nynaeve", "to": "Moiraine", "width": 1}, {"from": "Nynaeve", "to": "Lan", "width": 1}, {"from": "Nynaeve", "to": "Padan", "width": 1}, {"from": "Nynaeve", "to": "Fain", "width": 1}, {"from": "al\u0027Meara", "to": "Mistress", "width": 1}, {"from": "al\u0027Meara", "to": "Ishamael", "width": 1}, {"from": "al\u0027Meara", "to": "Aginor", "width": 1}, {"from": "al\u0027Meara", "to": "Haral", "width": 1}, {"from": "al\u0027Meara", "to": "Luhhan", "width": 1}, {"from": "al\u0027Meara", "to": "Moiraine", "width": 1}, {"from": "al\u0027Meara", "to": "Lan", "width": 1}, {"from": "al\u0027Meara", "to": "Padan", "width": 1}, {"from": "al\u0027Meara", "to": "Fain", "width": 1}, {"from": "Mistress", "to": "Ishamael", "width": 1}, {"from": "Mistress", "to": "Aginor", "width": 1}, {"from": "Mistress", "to": "Haral", "width": 1}, {"from": "Mistress", "to": "Luhhan", "width": 1}, {"from": "Mistress", "to": "Moiraine", "width": 1}, {"from": "Mistress", "to": "Lan", "width": 1}, {"from": "Mistress", "to": "Padan", "width": 1}, {"from": "Mistress", "to": "Fain", "width": 1}, {"from": "Ishamael", "to": "Aginor", "width": 1}, {"from": "Ishamael", "to": "Haral", "width": 1}, {"from": "Ishamael", "to": "Luhhan", "width": 1}, {"from": "Ishamael", "to": "Moiraine", "width": 1}, {"from": "Ishamael", "to": "Lan", "width": 1}, {"from": "Ishamael", "to": "Padan", "width": 1}, {"from": "Ishamael", "to": "Fain", "width": 1}, {"from": "Aginor", "to": "Haral", "width": 1}, {"from": "Aginor", "to": "Luhhan", "width": 1}, {"from": "Aginor", "to": "Moiraine", "width": 1}, {"from": "Aginor", "to": "Lan", "width": 1}, {"from": "Aginor", "to": "Padan", "width": 1}, {"from": "Aginor", "to": "Fain", "width": 1}, {"from": "Haral", "to": "Luhhan", "width": 1}, {"from": "Haral", "to": "Moiraine", "width": 1}, {"from": "Haral", "to": "Lan", "width": 1}, {"from": "Haral", "to": "Padan", "width": 1}, {"from": "Haral", "to": "Fain", "width": 1}, {"from": "Luhhan", "to": "Moiraine", "width": 1}, {"from": "Luhhan", "to": "Lan", "width": 1}, {"from": "Luhhan", "to": "Padan", "width": 1}, {"from": "Luhhan", "to": "Fain", "width": 1}, {"from": "Moiraine", "to": "Lan", "width": 1}, {"from": "Moiraine", "to": "Padan", "width": 1}, {"from": "Moiraine", "to": "Fain", "width": 1}, {"from": "Lan", "to": "Padan", "width": 1}, {"from": "Lan", "to": "Fain", "width": 1}, {"from": "Padan", "to": "Fain", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "repulsion": {
+            "centralGravity": 0.2,
+            "damping": 0.09,
+            "nodeDistance": 100,
+            "springConstant": 0.05,
+            "springLength": 200
+        },
+        "solver": "repulsion",
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
