@@ -1,3 +1,4 @@
+import os
 import math
 from textblob import TextBlob as tb
 
@@ -28,3 +29,19 @@ def tfidf(word, blob, bloblist):
     tf = term_freq(word, blob)
     idf = inv_doc_freq(word, bloblist)
     return tf * idf
+
+books = []
+
+# Iterate over book data folder and store content as blobs
+for f in os.scandir("./data"):
+    print(f.path)
+    if os.fsdecode(f).endswith(".txt"):
+        with open(f.path) as book:
+            books.append(tb(book.read()))
+
+for i, blob in enumerate(books):
+    print(f"Top words in book {i + 1}")
+    scores = {word: tfidf(word, blob, books) for word in blob.words}
+    sorted_words = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    for word, score in sorted_words[:10]:
+        print(f"Word: {word}, tfidf: {round(score, 5)}")
